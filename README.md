@@ -2,8 +2,6 @@
 
 标签（空格分隔）： React-Native JavaScript
 
-[TOC]
-
 ---
 <table>
     <tr>
@@ -13,19 +11,20 @@
         <th>备注</th>
     </tr>
     <tr>
-        <td>0.0.3</td>
+        <td>0.0.4</td>
         <td>信雅达</td>
-        <td>2017-08-28</td>
+        <td>2017-08-29</td>
         <td>版本更新</td>
     </tr>
 </table>
 
 ---
 
-2017-08-28
+2017-08-29
 更新记录：
-1-：更新编码约定，模版文件使用
-2-：更新页面编写规范，代码间隔
+1-：更新页面编写规范
+2-：更新编码约定
+3-：更新自定义组件
 
 
 
@@ -66,6 +65,8 @@
         img    存放图片
         app    APP一些component
         artcomponent    一些art组件
+
+
 
 ---
 
@@ -444,6 +445,12 @@
 
 2. 【推荐】对组件引用，变量初始化等，在整个页面或组件内未使用，因去除相关代码;
 
+3. 【推荐】某些全局变量请不要使用global，需新建文件进行导出引用；
+   `NetUtil.get(global.url + “”)`
+
+4. 【推荐】render()函数代码过长时，请适当进行拆分，拆分为‘‘页面内组件‘‘，提高可读性。render()函数代码行请勿超过八十行，超过之后，请自行进行拆分；
+
+
 ---
 ##三、编码约定
 
@@ -454,10 +461,84 @@
 
 2.【强制】开发中，不要使用任何后端的开发模式来构建APP结构，如使用MVC,MVP,MVVM等开发模式，React-Native推荐组件化，颗粒化，以上设计模式严重违背。若使用Redux,Mobx等数据流第三方，可依据第三方结构编写构建App。
 
+3.【推荐】某些输入框的值，放入到state中，并且设置defaultValue，不要使用全局变量进行引用,参照以下方式：
+
+     constructor(props) {
+        super(props);
+        this.state = {
+            editSalesPrice:'',  //修改后的商品售价
+            editPurchasePrice:'', //修改后的商品进价
+        };
+    }
+    
+    render(){
+      return(
+      <View style={styles.viewPadding}>
+                           <TextInput
+                                style={styles.rowInput}
+                                placeholder="请输入调整后的价格"
+                                onChangeText={(text)=>{
+                                    this.setState({
+                                        editSalesPrice:text,
+                                    })
+                                }}
+                                defaultValue={this.state.editSalesPrice}
+                                placeholderTextColor='#B0B7C2'
+                                underlineColorAndroid = 'transparent'
+                                autoCapitalize={'none'}
+                                autoCorrect={false}
+                                clearButtonMode={'while-editing'}
+                                keyboardType='numeric'
+                            />
+                        </View>
+                        );
+    }
+    
+    
+ 4.【强制】移除定时器，监听请按照如下代码进编写；
+
+    componentWillUnmount() {
+        //此生命周期内，去掉监听和定时器
+        this.msgListener && this.msgListener.remove();
+        // 如果存在this.timer，则使用clearTimeout清空。
+        this.timer && clearTimeout(this.timer);
+    }
+    
+    
+
 ###(二) 模版文件
 
 1.【推荐】根据附件，配置代码编写模版，推荐使用第二种配置方式，可配置多种模版。
 
+###(三) ListView,FaltList
+1.【强制】使用ListView或者FaltList的renderRow时，需对renderRow里面的组件需进行抽取，使用一个单独组件进行包裹，类似于页面子组件方式引入；
+请勿使用如下方式：
+
+    renderRow(news) {
+       return (
+            <TouchableOpacity onPress={() => {
+                this.onPress(news)
+            }} style={styles.container}>
+                <Image source={require('../imgs/icon_data.png')}/>
+                <View style={styles.row_main}>
+                    <Text style={styles.row_title}>{news.belOutlet}</Text>
+    
+                    <Text style={styles.row_bottom}>所属支行:{news.belBranch}</Text>
+                </View>
+                {this._renderNewFlag(news)}
+            </TouchableOpacity>
+         );
+    }
+
+推荐使用如下方式：
+
+    import GoodInCell from './GoodInCell'；
+    renderRow(news) {
+        return (
+            <GoodInCell  news={news}  />
+        );
+    }
+说明：使用此方式，可增加代码的可读性和理解性。更符合组件化的开发思路。
 
 ---
 ##四、自定义组件
@@ -487,6 +568,26 @@
             size: 40
       };
 
+
+2.【强制】代码中使用props方法时，具体参照以下方式进行调用；
+
+        export default class PostCallMsgToPar extends  Component {
+            render() {
+                return (
+                <View style={styles.container}>
+                    <TouchableOpacity onPress={this.postMsgByCallBack}>
+                    <Text>使用Callback修改父状态，无返回值</Text>
+                    </TouchableOpacity>
+                </View>
+                );
+            }
+    
+        postMsgByCallBack=()=>{
+                if(this.props.onChangeMsg){
+                    this.props.onChangeMsg();
+                }
+            }
+        }
 
 (三) 性能优化
 1. 【强制】无状态组件需使用PureComponent而不是Component；
@@ -539,7 +640,7 @@
         
           render() {
             if (this.state.renderPlaceholderOnly) {
-              return this._renderPlaceholderView();
+              return this.renderPlaceholderView();
             }
         
             return (
@@ -550,7 +651,7 @@
           }
         
         
-          _renderPlaceholderView() {
+          renderPlaceholderView() {
             return (
               <View>
                 <Text>Loading...</Text>
@@ -599,4 +700,3 @@
 对本文档有任何意见或者建议，欢迎在github提问。
 GitHub:
 https://github.com/sunyardTime/React-Native-CodeStyle
-
